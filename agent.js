@@ -14,6 +14,7 @@ const executableConfigPath = resolve(dirname(process.execPath), "config.json");
 const sourceConfigPath = resolve(__dirname, "config.json");
 const configPath = existsSync(executableConfigPath) ? executableConfigPath : sourceConfigPath;
 let lastScan = { startedAt: null, finishedAt: null, devices: [], error: null };
+let scanInProgress = false;
 const ouiVendors = {
   "00:03:93": { manufacturer: "Apple", type: "telefone" }, "00:0A:95": { manufacturer: "Apple", type: "telefone" }, "00:1C:B3": { manufacturer: "Apple", type: "telefone" }, "00:1E:C2": { manufacturer: "Apple", type: "telefone" }, "00:23:12": { manufacturer: "Apple", type: "telefone" }, "28:CF:DA": { manufacturer: "Apple", type: "telefone" }, "3C:06:30": { manufacturer: "Apple", type: "telefone" }, "40:A6:D9": { manufacturer: "Apple", type: "telefone" }, "70:3E:AC": { manufacturer: "Apple", type: "telefone" }, "F0:18:98": { manufacturer: "Apple", type: "telefone" },
   "00:16:6C": { manufacturer: "Samsung", type: "telefone" }, "28:BA:B5": { manufacturer: "Samsung", type: "telefone" }, "34:AA:99": { manufacturer: "Samsung", type: "telefone" }, "5C:0A:5B": { manufacturer: "Samsung", type: "telefone" }, "78:1F:DB": { manufacturer: "Samsung", type: "telefone" }, "E8:50:8B": { manufacturer: "Samsung", type: "telefone" },
@@ -29,8 +30,12 @@ const ouiVendors = {
 function loadConfig() {
   if (!existsSync(configPath)) throw new Error("config.json não encontrado. Copie config.example.json e preencha as configurações.");
   const config = JSON.parse(readFileSync(configPath, "utf8"));
-  if (!config.network || !config.apiUrl || !config.agentToken) throw new Error("network, apiUrl e agentToken são obrigatórios no config.json.");
-  return { version: "1.0.0", port: 47820, scanIntervalMinutes: 15, heartbeatIntervalSeconds: 120, maxHosts: 254, ...config };
+  if (!config.apiUrl || !config.agentToken) throw new Error("apiUrl e agentToken são obrigatórios no config.json.");
+  let apiUrl;
+  try { apiUrl = new URL(config.apiUrl); } catch { throw new Error("apiUrl deve ser uma URL HTTPS válida."); }
+  if (apiUrl.protocol !== "https:") throw new Error("apiUrl deve usar HTTPS.");
+  if (config.networkDiscoveryEnabled && !config.network) throw new Error("network é obrigatória quando networkDiscoveryEnabled é true.");
+  return { version: "1.1.0", port: 47820, scanIntervalMinutes: 15, heartbeatIntervalSeconds: 120, maxHosts: 254, networkDiscoveryEnabled: false, requestTimeoutSeconds: 15, ...config };
 }
 function ips(cidr, maxHosts) {
   const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/.exec(cidr);
@@ -114,15 +119,30 @@ async function mapConcurrent(items, worker, limit = 24) {
 }
 async function sync(config, devices, machine, deviceCount) {
   const body = { agentId: config.agentId || os.hostname(), devices, machine, ...(typeof deviceCount === "number" ? { deviceCount } : {}) };
-  const response = await fetch(config.apiUrl.replace(/\/$/, "") + "/api/ti/ingest", { method: "POST", headers: { "Content-Type": "application/json", "x-ti-agent-token": config.agentToken }, body: JSON.stringify(body) });
-  if (!response.ok) throw new Error(`Servidor respondeu ${response.status}: ${await response.text()}`);
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), config.requestTimeoutSeconds * 1000);
+    try {
+      const response = await fetch(config.apiUrl.replace(/\/$/, "") + "/api/ti/ingest", { method: "POST", headers: { "Content-Type": "application/json", "x-ti-agent-token": config.agentToken }, body: JSON.stringify(body), signal: controller.signal });
+      if (response.ok) return;
+      lastError = new Error(`Servidor respondeu ${response.status}: ${await response.text()}`);
+      if (response.status < 500 && response.status !== 429) throw lastError;
+    } catch (error) { lastError = error.name === "AbortError" ? new Error("Tempo limite ao conectar ao servidor.") : error; }
+    finally { clearTimeout(timer); }
+    await new Promise(resolveDelay => setTimeout(resolveDelay, 500 * (2 ** attempt)));
+  }
+  throw lastError;
 }
 async function scan() {
+  if (scanInProgress) throw new Error("Uma varredura já está em andamento.");
+  scanInProgress = true;
   const config = loadConfig(); lastScan = { startedAt: new Date().toISOString(), finishedAt: null, devices: [], error: null };
-  try { const online = await mapConcurrent(ips(config.network, config.maxHosts), async ip => { const responseMs = await ping(ip); return responseMs === null ? null : identify(ip, responseMs); }); await sync(config, online, await localMachine(), online.length); lastScan = { ...lastScan, finishedAt: new Date().toISOString(), devices: online }; return lastScan; } catch (error) { lastScan.error = error.message; lastScan.finishedAt = new Date().toISOString(); throw error; }
+  try { const online = config.networkDiscoveryEnabled ? await mapConcurrent(ips(config.network, config.maxHosts), async ip => { const responseMs = await ping(ip); return responseMs === null ? null : identify(ip, responseMs); }) : []; await sync(config, online, await localMachine(), online.length); lastScan = { ...lastScan, finishedAt: new Date().toISOString(), devices: online }; return lastScan; } catch (error) { lastScan.error = error.message; lastScan.finishedAt = new Date().toISOString(); throw error; } finally { scanInProgress = false; }
 }
 async function heartbeat() { const config = loadConfig(); await sync(config, [], await localMachine()); }
 function startServer(config) {
-  createServer(async (request, response) => { response.setHeader("Content-Type", "application/json; charset=utf-8"); if (request.url === "/status") return response.end(JSON.stringify({ name: "Life TI Agent", version: config.version, agentId: config.agentId, network: config.network, ...lastScan })); if (request.url === "/scan" && request.method === "POST") { try { response.end(JSON.stringify(await scan())); } catch (error) { response.statusCode = 500; response.end(JSON.stringify({ error: error.message })); } return; } response.statusCode = 404; response.end(JSON.stringify({ error: "Rota não encontrada" })); }).listen(config.port, "127.0.0.1", () => console.log(`Life TI Agent ${config.version} ativo em http://127.0.0.1:${config.port}`));
+  createServer(async (request, response) => { response.setHeader("Content-Type", "application/json; charset=utf-8"); response.setHeader("Cache-Control", "no-store"); if (request.url === "/status") return response.end(JSON.stringify({ name: "Life TI Agent", version: config.version, agentId: config.agentId, networkDiscoveryEnabled: config.networkDiscoveryEnabled, ...lastScan })); if (request.url === "/scan" && request.method === "POST") { try { response.end(JSON.stringify(await scan())); } catch (error) { response.statusCode = 500; response.end(JSON.stringify({ error: error.message })); } return; } response.statusCode = 404; response.end(JSON.stringify({ error: "Rota não encontrada" })); }).listen(config.port, "127.0.0.1", () => console.log(`Life TI Agent ${config.version} ativo em http://127.0.0.1:${config.port}`));
 }
-const config = loadConfig(); startServer(config); scan().catch(error => console.error("Primeira varredura falhou:", error.message)); setInterval(() => scan().catch(error => console.error("Varredura falhou:", error.message)), config.scanIntervalMinutes * 60_000); setInterval(() => heartbeat().catch(error => console.error("Atualização local falhou:", error.message)), config.heartbeatIntervalSeconds * 1000);
+if (require.main === module) { const config = loadConfig(); startServer(config); scan().catch(error => console.error("Primeira varredura falhou:", error.message)); setInterval(() => scan().catch(error => console.error("Varredura falhou:", error.message)), config.scanIntervalMinutes * 60_000); setInterval(() => heartbeat().catch(error => console.error("Atualização local falhou:", error.message)), config.heartbeatIntervalSeconds * 1000); }
+module.exports = { classifyDevice, ips };

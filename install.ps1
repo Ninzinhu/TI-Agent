@@ -21,16 +21,21 @@ if (-not (Test-Path -LiteralPath $ExecutablePath) -and -not (Get-Command node -E
 }
 
 @{
-  version = "1.0.0"
+  version = "1.1.0"
   agentId = $AgentId
   network = $Network
+  networkDiscoveryEnabled = $false
   apiUrl = $ApiUrl.TrimEnd("/")
   agentToken = $AgentToken
   scanIntervalMinutes = 15
   heartbeatIntervalSeconds = 120
   port = 47820
   maxHosts = 254
+  requestTimeoutSeconds = 15
 } | ConvertTo-Json | Set-Content -LiteralPath $ConfigPath -Encoding utf8
+
+# O token deve ficar acessível somente à conta atual, administradores e SYSTEM.
+& icacls.exe $ConfigPath /inheritance:r /grant:r "${env:USERDOMAIN}\${env:USERNAME}:(R,W)" "Administrators:(F)" "SYSTEM:(F)" | Out-Null
 
 Write-Host "Configuração criada em $ConfigPath" -ForegroundColor Green
 if ($InstallService) {

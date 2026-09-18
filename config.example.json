@@ -1,11 +1,13 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "agentId": "pc-recepcao-01",
   "network": "192.168.1.0/24",
+  "networkDiscoveryEnabled": false,
   "apiUrl": "https://seu-sistema.exemplo.com",
   "agentToken": "use-o-mesmo-token-configurado-no-servidor",
   "scanIntervalMinutes": 15,
   "heartbeatIntervalSeconds": 120,
   "port": 47820,
-  "maxHosts": 254
+  "maxHosts": 254,
+  "requestTimeoutSeconds": 15
 }
