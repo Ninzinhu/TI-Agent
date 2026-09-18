@@ -1,0 +1,50 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      NODE_OPTIONS: --no-deprecation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Validate source
+        run: |
+          npm ci
+          npm run check
+          npm test
+      - name: Build Windows executable
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          npx --yes @yao-pkg/pkg@6.22.0 --targets node20-win-x64 --output dist/LifeTiAgent.exe agent.js
+          Copy-Item config.example.json dist/config.example.json
+      - name: Install WiX Toolset
+        run: choco install wixtoolset --no-progress --yes
+      - name: Build MSI
+        shell: powershell
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart("v")
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "A tag deve usar versão semântica, por exemplo v1.2.3." }
+          $wix = (Get-ChildItem "C:\Program Files (x86)" -Directory | Where-Object { $_.Name -like "WiX Toolset*" } | Select-Object -First 1).FullName
+          if (-not $wix) { throw "WiX Toolset não foi encontrado." }
+          & "$wix\bin\candle.exe" -nologo -arch x64 -dProductVersion=$version -dBuildDir="$pwd\dist" -dProjectDir="$pwd" -out dist\ installer\Product.wxs
+          & "$wix\bin\light.exe" -nologo -out "dist\LifeTiAgent-$version-x64.msi" dist\Product.wixobj
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: powershell
+        run: |
+          $tag = "${{ github.ref_name }}"
+          gh release create $tag dist/LifeTiAgent.exe dist/*.msi --verify-tag --generate-notes --title "Life TI Agent $tag"

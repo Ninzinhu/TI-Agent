@@ -29,6 +29,8 @@ Abra PowerShell como administrador e execute:
 
 Se `LifeTiAgent.exe` estiver na pasta, o serviço usa o executável. Caso contrário, usa `node agent.js` durante a etapa de desenvolvimento.
 
+O serviço é configurado para reiniciar automaticamente após falhas. Antes de instalá-lo, crie o `config.json` com `./install.ps1`.
+
 ## Configuração
 
 Nunca reutilize um token entre empresas ou computadores. Cada instalação deve receber token individual, que possa ser revogado pelo painel.
@@ -46,3 +48,7 @@ Nunca reutilize um token entre empresas ou computadores. Cada instalação deve 
 ## Distribuição pública
 
 O repositório inclui uma licença MIT. A descoberta de rede vem desativada por padrão e deve ser habilitada apenas com autorização expressa. Leia a [política de privacidade](PRIVACY.md), as orientações de [segurança](SECURITY.md) e o [checklist de release](RELEASING.md). O arquivo `config.json` é local e não deve ser incluído em releases nem commits.
+
+## Releases para Windows
+
+Toda tag no formato `v*` (por exemplo, `v1.1.0`) dispara a criação de uma GitHub Release com `LifeTiAgent.exe` e `LifeTiAgent-<versão>-x64.msi`. O MSI instala os arquivos em `Program Files\\Life TI Agent`; após instalar, execute `install.ps1` nessa pasta para criar a configuração individual e, em um PowerShell administrador, execute `install-service.ps1`.

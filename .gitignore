@@ -10,3 +10,6 @@ config.json
 node_modules/
 npm-debug.log*
 *.log
+
+# Saída local de empacotamento.
+dist/

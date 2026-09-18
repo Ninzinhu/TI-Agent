@@ -11,3 +11,14 @@ Antes de publicar uma versão:
 7. Publique as notas da versão, a política de privacidade e um canal privado para reporte de vulnerabilidades.
 
 O projeto não inclui certificado, chave privada, mecanismo de atualização ou instalador binário: esses itens devem ser provisionados pelo responsável pela distribuição em ambiente seguro.
+
+## Publicação automatizada
+
+Crie e envie uma tag versionada para publicar os artefatos:
+
+```powershell
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+O workflow de release valida o projeto, gera o executável com `pkg`, cria o MSI com WiX e anexa ambos à GitHub Release. Ative assinatura de código no workflow antes de oferecer os arquivos ao público.
