@@ -22,6 +22,7 @@
       <Component Id="AgentInstallScripts" Guid="6B204F1A-6CF3-4F5A-9498-D1A0BC86A664">
         <File Id="InstallScript" Source="$(var.ProjectDir)\\install.ps1" KeyPath="yes" />
         <File Id="InstallServiceScript" Source="$(var.ProjectDir)\\install-service.ps1" />
+        <File Id="ConfigureScript" Source="$(var.ProjectDir)\\configure-agent.ps1" />
       </Component>
       <Component Id="AgentDocumentation" Guid="CCF0C4D3-0DC7-41B3-83CF-A47CA1A4F277">
         <File Id="Readme" Source="$(var.ProjectDir)\\README.md" KeyPath="yes" />

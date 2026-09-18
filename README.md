@@ -52,3 +52,5 @@ O repositório inclui uma licença MIT. A descoberta de rede vem desativada por 
 ## Releases para Windows
 
 Toda tag no formato `v*` (por exemplo, `v1.1.0`) dispara a criação de uma GitHub Release com `LifeTiAgent.exe` e `LifeTiAgent-<versão>-x64.msi`. O MSI instala os arquivos em `Program Files\\Life TI Agent`; após instalar, execute `install.ps1` nessa pasta para criar a configuração individual e, em um PowerShell administrador, execute `install-service.ps1`.
+
+Para uma configuração com formulário, execute `configure-agent.ps1`. Consulte o [guia de utilização](GUIDE.md).

@@ -22,3 +22,5 @@ git push origin v1.1.0
 ```
 
 O workflow de release valida o projeto, gera o executável com `pkg`, cria o MSI com WiX e anexa ambos à GitHub Release. Ative assinatura de código no workflow antes de oferecer os arquivos ao público.
+
+Para ativar assinatura, salve o conteúdo Base64 do certificado PFX em `WINDOWS_SIGNING_CERTIFICATE` e a senha em `WINDOWS_SIGNING_PASSWORD`, ambos como GitHub Actions secrets. O workflow assina EXE/MSI quando o certificado estiver configurado e publica `SHA256SUMS.txt` e `sbom.cdx.json` em toda release.

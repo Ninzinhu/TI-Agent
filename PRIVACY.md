@@ -11,3 +11,5 @@ Os dados são usados exclusivamente para inventário e gestão de ativos de TI e
 ## Responsabilidades do operador
 
 Quem distribui o agente deve informar os usuários e manter base legal, retenção, controles de acesso, canal de atendimento e procedimento de eliminação compatíveis com a legislação aplicável, inclusive LGPD quando aplicável.
+
+Antes da distribuição, o operador deve completar sua publicação com: identidade e contato do controlador/DPO, base legal aplicável, prazo de retenção, subprocessadores, país de armazenamento, procedimento para pedidos de titulares e contato para incidentes. Não publique esta ferramenta como política final sem esses dados organizacionais.

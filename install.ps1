@@ -3,6 +3,7 @@ param(
   [string]$AgentToken = "",
   [string]$AgentId = "",
   [string]$Network = "",
+  [switch]$EnableNetworkDiscovery,
   [switch]$InstallService
 )
 
@@ -24,7 +25,7 @@ if (-not (Test-Path -LiteralPath $ExecutablePath) -and -not (Get-Command node -E
   version = "1.1.0"
   agentId = $AgentId
   network = $Network
-  networkDiscoveryEnabled = $false
+  networkDiscoveryEnabled = [bool]$EnableNetworkDiscovery
   apiUrl = $ApiUrl.TrimEnd("/")
   agentToken = $AgentToken
   scanIntervalMinutes = 15

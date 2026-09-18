@@ -9,7 +9,8 @@
   },
   "scripts": {
     "check": "node --check agent.js",
-    "test": "node --test"
+    "test": "node --test",
+    "sbom": "node scripts/generate-sbom.js"
   },
   "license": "MIT"
 }
