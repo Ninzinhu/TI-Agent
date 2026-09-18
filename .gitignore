@@ -1,0 +1,12 @@
+# Configuração local com credencial individual — nunca versionar.
+config.json
+
+# Artefatos gerados para distribuição.
+*.exe
+*.msi
+*.zip
+
+# Dependências e logs locais.
+node_modules/
+npm-debug.log*
+*.log
