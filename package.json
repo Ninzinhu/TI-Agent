@@ -1,0 +1,15 @@
+{
+  "name": "life-ti-agent",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Agente Windows de inventário e descoberta autorizada de ativos de TI.",
+  "main": "agent.js",
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "scripts": {
+    "check": "node --check agent.js",
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
