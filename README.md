@@ -5,6 +5,7 @@ Agente leve e independente para inventário de TI. Ele pode ser distribuído gra
 ## O que ele coleta
 
 - Inventário local do Windows: marca, modelo, serial, processador, sistema, memória, disco, IP, MAC e tempo ligado.
+- Nome do usuário atualmente conectado, quando disponível no Windows.
 - Identificação de desktop ou notebook pela bateria do equipamento.
 - Descoberta opcional de ativos em uma faixa IPv4 autorizada.
 - Classificação por fabricante do MAC, hostname e portas: telefone, impressora, computador, servidor e rede.
@@ -36,6 +37,7 @@ Nunca reutilize um token entre empresas ou computadores. Cada instalação deve 
 {
   "agentId": "pc-recepcao-01",
   "network": "192.168.1.0/24",
+  "networkDiscoveryEnabled": false,
   "apiUrl": "https://painel.suaempresa.com",
   "agentToken": "token-individual-da-instalacao"
 }
@@ -43,4 +45,4 @@ Nunca reutilize um token entre empresas ou computadores. Cada instalação deve 
 
 ## Distribuição pública
 
-O repositório inclui uma licença MIT. Antes de liberar uma versão pública, publique um instalador assinado, uma política de privacidade e um mecanismo de atualização assinado. O arquivo `config.json` é local e não deve ser incluído em releases nem commits.
+O repositório inclui uma licença MIT. A descoberta de rede vem desativada por padrão e deve ser habilitada apenas com autorização expressa. Leia a [política de privacidade](PRIVACY.md), as orientações de [segurança](SECURITY.md) e o [checklist de release](RELEASING.md). O arquivo `config.json` é local e não deve ser incluído em releases nem commits.
