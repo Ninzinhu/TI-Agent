@@ -35,7 +35,7 @@ function loadConfig() {
   try { apiUrl = new URL(config.apiUrl); } catch { throw new Error("apiUrl deve ser uma URL HTTPS válida."); }
   if (apiUrl.protocol !== "https:") throw new Error("apiUrl deve usar HTTPS.");
   if (config.networkDiscoveryEnabled && !config.network) throw new Error("network é obrigatória quando networkDiscoveryEnabled é true.");
-  return { version: "1.1.0", port: 47820, scanIntervalMinutes: 15, heartbeatIntervalSeconds: 120, maxHosts: 254, networkDiscoveryEnabled: false, requestTimeoutSeconds: 15, ...config };
+  return { version: "1.1.1", port: 47820, scanIntervalMinutes: 15, heartbeatIntervalSeconds: 120, maxHosts: 254, networkDiscoveryEnabled: false, requestTimeoutSeconds: 15, ...config };
 }
 function ips(cidr, maxHosts) {
   const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/.exec(cidr);
